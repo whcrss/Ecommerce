@@ -1,0 +1,814 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--color-background-tertiary,#f5f5f0);color:var(--color-text-primary,#1a1a1a);min-height:100vh}
+  :root{--accent:#c84b31;--accent-light:#f5e8e4;--accent-dark:#8c3422;--navy:#1a2332;--surface:#fff;--muted:#6b7280;--border:rgba(0,0,0,0.1);--success:#16a34a;--warning:#d97706}
+  button{cursor:pointer;border:none;font-family:inherit;font-size:14px;transition:all .15s}
+  input,select,textarea{font-family:inherit;font-size:14px;border:1px solid var(--border);border-radius:8px;padding:8px 12px;width:100%;background:var(--surface);color:var(--color-text-primary);outline:none}
+  input:focus,select:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 2px rgba(200,75,49,0.15)}
+  .btn{padding:9px 18px;border-radius:8px;font-weight:500}
+  .btn-primary{background:var(--accent);color:#fff}
+  .btn-primary:hover{background:var(--accent-dark)}
+  .btn-ghost{background:transparent;border:1px solid var(--border);color:var(--color-text-primary)}
+  .btn-ghost:hover{background:var(--color-background-secondary,#f0f0eb)}
+  .btn-danger{background:#dc2626;color:#fff;padding:6px 12px;border-radius:6px;font-size:13px}
+  .btn-sm{padding:6px 12px;font-size:13px;border-radius:6px}
+  .badge{display:inline-block;padding:2px 8px;border-radius:99px;font-size:12px;font-weight:500}
+  .badge-success{background:#dcfce7;color:#15803d}
+  .badge-warning{background:#fef3c7;color:#92400e}
+  .badge-danger{background:#fee2e2;color:#991b1b}
+  .card{background:var(--surface);border-radius:12px;border:1px solid var(--border);overflow:hidden}
+  .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:1000;padding:16px}
+  .modal{background:var(--surface);border-radius:16px;padding:24px;width:100%;max-width:480px;max-height:90vh;overflow-y:auto}
+  .toast{position:fixed;bottom:24px;right:24px;background:var(--navy);color:#fff;padding:12px 20px;border-radius:10px;font-size:14px;z-index:2000;animation:slideUp .3s ease}
+  @keyframes slideUp{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}
+  .spinner{width:20px;height:20px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin .8s linear infinite;display:inline-block}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  nav{background:var(--navy);color:#fff;padding:0 24px;height:60px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+  nav .logo{font-size:20px;font-weight:700;color:#fff;letter-spacing:-0.5px}
+  nav .logo span{color:var(--accent)}
+  .nav-links{display:flex;align-items:center;gap:8px}
+  .nav-links button{background:transparent;color:rgba(255,255,255,0.8);padding:6px 12px;border-radius:6px;font-size:14px}
+  .nav-links button:hover{background:rgba(255,255,255,0.1);color:#fff}
+  .cart-btn{position:relative;background:var(--accent)!important;color:#fff!important}
+  .cart-count{position:absolute;top:-6px;right:-6px;background:#fff;color:var(--accent);width:18px;height:18px;border-radius:50%;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center}
+  .page{display:none;padding:24px;max-width:1200px;margin:0 auto}
+  .page.active{display:block}
+  .product-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px;margin-top:16px}
+  .product-card{background:var(--surface);border-radius:12px;border:1px solid var(--border);overflow:hidden;transition:transform .2s,box-shadow .2s}
+  .product-card:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,0.1)}
+  .product-img{height:180px;display:flex;align-items:center;justify-content:center;font-size:56px;background:var(--accent-light)}
+  .product-info{padding:14px}
+  .product-name{font-weight:600;font-size:15px;margin-bottom:4px}
+  .product-price{color:var(--accent);font-weight:700;font-size:18px}
+  .product-stock{font-size:12px;color:var(--muted);margin-top:4px}
+  .hero{background:linear-gradient(135deg,var(--navy) 0%,#2d3f5c 100%);color:#fff;padding:48px 24px;text-align:center;border-radius:16px;margin-bottom:24px}
+  .hero h1{font-size:36px;font-weight:800;letter-spacing:-1px;margin-bottom:12px}
+  .hero p{color:rgba(255,255,255,0.7);font-size:16px;margin-bottom:24px}
+  .cart-item{display:flex;align-items:center;gap:12px;padding:14px 0;border-bottom:1px solid var(--border)}
+  .cart-item:last-child{border-bottom:none}
+  .cart-emoji{font-size:32px;width:48px;height:48px;display:flex;align-items:center;justify-content:center;background:var(--accent-light);border-radius:10px}
+  .qty-ctrl{display:flex;align-items:center;gap:8px}
+  .qty-btn{width:28px;height:28px;border-radius:6px;background:var(--color-background-secondary,#f0f0eb);border:1px solid var(--border);font-size:16px;display:flex;align-items:center;justify-content:center}
+  .qty-btn:hover{background:var(--accent);color:#fff;border-color:var(--accent)}
+  .order-row{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--border);font-size:14px}
+  .order-row:last-child{border-bottom:none}
+  .admin-sidebar{width:200px;background:var(--surface);border-right:1px solid var(--border);padding:16px 0;height:calc(100vh - 60px);position:sticky;top:60px}
+  .admin-layout{display:grid;grid-template-columns:200px 1fr;min-height:calc(100vh - 60px)}
+  .admin-nav-item{display:block;padding:10px 20px;font-size:14px;color:var(--color-text-primary);background:transparent;border:none;width:100%;text-align:left;cursor:pointer;border-radius:0}
+  .admin-nav-item:hover{background:var(--accent-light)}
+  .admin-nav-item.active{background:var(--accent-light);color:var(--accent);font-weight:600}
+  .admin-content{padding:24px}
+  .stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
+  .stat-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px}
+  .stat-label{font-size:12px;color:var(--muted);font-weight:500;margin-bottom:4px}
+  .stat-value{font-size:28px;font-weight:700}
+  .data-table{width:100%;border-collapse:collapse}
+  .data-table th{text-align:left;padding:10px 14px;font-size:12px;font-weight:600;color:var(--muted);background:var(--color-background-secondary,#f9f9f6);border-bottom:1px solid var(--border)}
+  .data-table td{padding:12px 14px;border-bottom:1px solid var(--border);font-size:14px}
+  .data-table tr:last-child td{border-bottom:none}
+  .data-table tr:hover td{background:var(--accent-light)}
+  .search-bar{display:flex;gap:8px;margin-bottom:16px}
+  .search-bar input{max-width:320px}
+  .form-group{margin-bottom:16px}
+  .form-label{display:block;font-size:13px;font-weight:500;color:var(--color-text-secondary,#555);margin-bottom:6px}
+  .form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .ai-chat{position:fixed;bottom:24px;left:24px;z-index:999}
+  .ai-chat-btn{width:52px;height:52px;border-radius:50%;background:var(--accent);color:#fff;font-size:22px;box-shadow:0 4px 16px rgba(200,75,49,0.4)}
+  .ai-chat-btn:hover{background:var(--accent-dark)}
+  .ai-panel{background:var(--surface);border:1px solid var(--border);border-radius:16px;width:340px;height:420px;display:flex;flex-direction:column;margin-bottom:12px;box-shadow:0 8px 32px rgba(0,0,0,0.15)}
+  .ai-panel-header{padding:14px 16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
+  .ai-messages{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:8px}
+  .ai-msg{padding:8px 12px;border-radius:10px;font-size:13px;line-height:1.5;max-width:90%}
+  .ai-msg.user{background:var(--accent);color:#fff;align-self:flex-end}
+  .ai-msg.bot{background:var(--color-background-secondary,#f0f0eb);align-self:flex-start}
+  .ai-input-row{padding:10px;border-top:1px solid var(--border);display:flex;gap:8px}
+  .ai-input-row input{flex:1}
+  .empty-state{text-align:center;padding:48px 24px;color:var(--muted)}
+  .empty-state .icon{font-size:48px;margin-bottom:12px}
+  .tabs{display:flex;gap:4px;background:var(--color-background-secondary,#f0f0eb);border-radius:10px;padding:4px;margin-bottom:20px}
+  .tab{flex:1;padding:8px;border-radius:7px;font-size:14px;font-weight:500;background:transparent;color:var(--muted)}
+  .tab.active{background:var(--surface);color:var(--color-text-primary);box-shadow:0 1px 4px rgba(0,0,0,0.1)}
+  .filter-chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+  .chip{padding:6px 14px;border-radius:99px;font-size:13px;border:1px solid var(--border);background:transparent;color:var(--color-text-primary)}
+  .chip.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+</style>
+</head>
+<body>
+
+<!-- NAVIGATION -->
+<nav>
+  <div class="logo">SHOP<span>CRAFT</span></div>
+  <div class="nav-links" id="nav-links"></div>
+</nav>
+
+<!-- PAGES -->
+<div id="page-home" class="page active">
+  <div class="hero">
+    <h1>🛍️ ShopCraft Store</h1>
+    <p>Discover amazing products, delivered fast</p>
+    <button class="btn btn-primary" style="font-size:16px;padding:12px 28px" onclick="filterCategory('all')">Shop Now</button>
+  </div>
+  <div class="filter-chips" id="category-chips"></div>
+  <div class="product-grid" id="product-grid"></div>
+</div>
+
+<div id="page-cart" class="page">
+  <h2 style="margin-bottom:20px;font-size:22px">🛒 Your Cart</h2>
+  <div id="cart-list"></div>
+  <div id="cart-summary"></div>
+</div>
+
+<div id="page-orders" class="page">
+  <h2 style="margin-bottom:20px;font-size:22px">📦 My Orders</h2>
+  <div id="orders-list"></div>
+</div>
+
+<div id="page-account" class="page">
+  <div class="card" style="max-width:440px;margin:0 auto;padding:24px">
+    <div id="auth-form"></div>
+  </div>
+</div>
+
+<div id="page-admin" class="page" style="padding:0;max-width:none">
+  <div class="admin-layout">
+    <div class="admin-sidebar">
+      <button class="admin-nav-item active" onclick="switchAdminTab('dashboard')">📊 Dashboard</button>
+      <button class="admin-nav-item" onclick="switchAdminTab('products')">📦 Products</button>
+      <button class="admin-nav-item" onclick="switchAdminTab('orders')">🧾 Orders</button>
+      <button class="admin-nav-item" onclick="switchAdminTab('customers')">👥 Customers</button>
+      <div style="padding:20px 20px 8px;font-size:11px;color:var(--muted);font-weight:600;letter-spacing:.5px;margin-top:8px">STORE</div>
+      <button class="admin-nav-item" onclick="showPage('home')">🏪 View Store</button>
+    </div>
+    <div class="admin-content">
+      <div id="admin-dashboard"></div>
+      <div id="admin-products" style="display:none"></div>
+      <div id="admin-orders" style="display:none"></div>
+      <div id="admin-customers" style="display:none"></div>
+    </div>
+  </div>
+</div>
+
+<!-- AI CHAT ASSISTANT -->
+<div class="ai-chat" id="ai-chat" style="display:none">
+  <div class="ai-panel" id="ai-panel" style="display:none">
+    <div class="ai-panel-header">
+      <div style="font-weight:600;font-size:14px">🤖 ShopBot Assistant</div>
+      <button onclick="toggleChat()" class="btn-ghost btn" style="padding:4px 10px;font-size:12px">✕</button>
+    </div>
+    <div class="ai-messages" id="ai-messages">
+      <div class="ai-msg bot">Hi! I'm ShopBot. I can help you find products, track orders, or answer any questions! 👋</div>
+    </div>
+    <div class="ai-input-row">
+      <input type="text" id="ai-input" placeholder="Ask me anything..." onkeydown="if(event.key==='Enter')sendAIMsg()">
+      <button class="btn btn-primary btn-sm" onclick="sendAIMsg()">Send</button>
+    </div>
+  </div>
+  <button class="ai-chat-btn btn" onclick="toggleChat()">🤖</button>
+</div>
+
+<!-- MODALS -->
+<div class="modal-overlay" id="product-modal" style="display:none">
+  <div class="modal" id="product-modal-content"></div>
+</div>
+<div class="modal-overlay" id="checkout-modal" style="display:none">
+  <div class="modal" id="checkout-modal-content"></div>
+</div>
+<div id="toast-container"></div>
+
+<script>
+const API_URL = "https://api.anthropic.com/v1/messages";
+
+// ── STATE ──────────────────────────────────────────────────────────────
+let state = {
+  currentPage: 'home',
+  currentUser: null,
+  adminTab: 'dashboard',
+  chatOpen: false,
+  cart: [],
+  filter: 'all',
+  users: [
+    { id: 1, name: 'Admin User', email: 'admin@shopcraft.com', password: 'admin123', role: 'admin', joined: '2024-01-01' },
+    { id: 2, name: 'Jane Smith', email: 'jane@example.com', password: 'pass123', role: 'customer', joined: '2024-03-15' },
+    { id: 3, name: 'Mike Johnson', email: 'mike@example.com', password: 'pass123', role: 'customer', joined: '2024-04-10' }
+  ],
+  products: [
+    { id: 1, name: 'Wireless Headphones', emoji: '🎧', price: 89.99, stock: 45, category: 'Electronics', desc: 'Premium sound quality with 30hr battery life and active noise cancellation.' },
+    { id: 2, name: 'Running Shoes', emoji: '👟', price: 129.99, stock: 32, category: 'Fashion', desc: 'Lightweight performance shoes with cushioned sole for long distance runs.' },
+    { id: 3, name: 'Coffee Maker', emoji: '☕', price: 59.99, stock: 18, category: 'Home', desc: 'Brew perfect coffee every morning with 12-cup capacity and auto-shutoff.' },
+    { id: 4, name: 'Yoga Mat', emoji: '🧘', price: 39.99, stock: 60, category: 'Sports', desc: 'Non-slip eco-friendly mat, 6mm thick with alignment lines.' },
+    { id: 5, name: 'Mechanical Keyboard', emoji: '⌨️', price: 149.99, stock: 22, category: 'Electronics', desc: 'TKL layout, RGB backlit, tactile blue switches for the ultimate typing experience.' },
+    { id: 6, name: 'Sunglasses', emoji: '🕶️', price: 49.99, stock: 55, category: 'Fashion', desc: 'Polarized UV400 lenses with lightweight titanium frame.' },
+    { id: 7, name: 'Smart Watch', emoji: '⌚', price: 199.99, stock: 15, category: 'Electronics', desc: 'Health tracking, GPS, and 7-day battery life in a slim design.' },
+    { id: 8, name: 'Water Bottle', emoji: '🧴', price: 24.99, stock: 80, category: 'Sports', desc: '1L stainless steel, keeps drinks cold 24hr or hot 12hr.' },
+    { id: 9, name: 'Desk Lamp', emoji: '💡', price: 34.99, stock: 40, category: 'Home', desc: 'LED with 5 color modes, touch dimmer, and USB charging port.' }
+  ],
+  orders: [
+    { id: 'ORD-001', userId: 2, items: [{id:1,name:'Wireless Headphones',qty:1,price:89.99}], total: 89.99, status: 'delivered', date: '2024-11-10' },
+    { id: 'ORD-002', userId: 3, items: [{id:2,name:'Running Shoes',qty:2,price:129.99},{id:8,name:'Water Bottle',qty:1,price:24.99}], total: 284.97, status: 'shipped', date: '2024-11-18' },
+    { id: 'ORD-003', userId: 2, items: [{id:7,name:'Smart Watch',qty:1,price:199.99}], total: 199.99, status: 'processing', date: '2024-11-20' }
+  ],
+  nextOrderId: 4
+};
+
+// ── NAVIGATION ─────────────────────────────────────────────────────────
+function showPage(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+  state.currentPage = page;
+  renderNav();
+  if (page === 'home') renderProducts();
+  if (page === 'cart') renderCart();
+  if (page === 'orders') renderOrders();
+  if (page === 'account') renderAccount();
+  if (page === 'admin') { renderAdmin(); document.getElementById('ai-chat').style.display = 'none'; }
+  else document.getElementById('ai-chat').style.display = state.currentUser ? 'block' : 'none';
+}
+
+function renderNav() {
+  const u = state.currentUser;
+  let html = '';
+  if (!u) {
+    html = `<button class="btn" onclick="showPage('home')">🏪 Shop</button>
+            <button class="btn" onclick="showPage('account')">Sign In</button>`;
+  } else if (u.role === 'admin') {
+    html = `<button class="btn" onclick="showPage('home')">🏪 Shop</button>
+            <button class="btn" onclick="showPage('admin')">⚙️ Admin</button>
+            <button class="btn" onclick="logout()">Sign Out</button>`;
+  } else {
+    const count = state.cart.reduce((a,i)=>a+i.qty,0);
+    html = `<button class="btn" onclick="showPage('home')">🏪 Shop</button>
+            <button class="btn" onclick="showPage('orders')">📦 Orders</button>
+            <button class="btn cart-btn" onclick="showPage('cart')">🛒 Cart${count > 0 ? `<span class="cart-count">${count}</span>` : ''}</button>
+            <button class="btn" onclick="showPage('account')">${u.name.split(' ')[0]}</button>`;
+  }
+  document.getElementById('nav-links').innerHTML = html;
+}
+
+// ── PRODUCTS ───────────────────────────────────────────────────────────
+function filterCategory(cat) {
+  state.filter = cat;
+  renderProducts();
+  document.querySelectorAll('.chip').forEach(c => {
+    c.classList.toggle('active', c.dataset.cat === cat);
+  });
+}
+
+function renderProducts() {
+  const cats = ['all', ...new Set(state.products.map(p => p.category))];
+  const chipsEl = document.getElementById('category-chips');
+  if (chipsEl) {
+    chipsEl.innerHTML = cats.map(c =>
+      `<button class="chip ${state.filter===c?'active':''}" data-cat="${c}" onclick="filterCategory('${c}')">${c==='all'?'All Products':c}</button>`
+    ).join('');
+  }
+  const filtered = state.filter === 'all' ? state.products : state.products.filter(p => p.category === state.filter);
+  const grid = document.getElementById('product-grid');
+  if (!grid) return;
+  if (!filtered.length) { grid.innerHTML = '<div class="empty-state"><div class="icon">📭</div><p>No products found</p></div>'; return; }
+  grid.innerHTML = filtered.map(p => `
+    <div class="product-card">
+      <div class="product-img">${p.emoji}</div>
+      <div class="product-info">
+        <div class="product-name">${p.name}</div>
+        <div style="font-size:12px;color:var(--muted);margin:4px 0">${p.category}</div>
+        <div class="product-price">$${p.price.toFixed(2)}</div>
+        <div class="product-stock">${p.stock > 0 ? `${p.stock} in stock` : '<span style="color:#dc2626">Out of stock</span>'}</div>
+        <div style="display:flex;gap:8px;margin-top:12px">
+          <button class="btn btn-ghost btn-sm" onclick="viewProduct(${p.id})">Details</button>
+          ${p.stock > 0 ? `<button class="btn btn-primary btn-sm" onclick="addToCart(${p.id})">Add to Cart</button>` : ''}
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function viewProduct(id) {
+  const p = state.products.find(x => x.id === id);
+  if (!p) return;
+  document.getElementById('product-modal-content').innerHTML = `
+    <div style="text-align:center;margin-bottom:20px">
+      <div style="font-size:72px;margin-bottom:8px">${p.emoji}</div>
+      <h2 style="font-size:20px;margin-bottom:6px">${p.name}</h2>
+      <span class="badge" style="background:var(--accent-light);color:var(--accent)">${p.category}</span>
+    </div>
+    <p style="color:var(--muted);font-size:14px;line-height:1.7;margin-bottom:16px">${p.desc}</p>
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:14px;background:var(--color-background-secondary,#f9f9f6);border-radius:10px;margin-bottom:16px">
+      <span style="font-size:24px;font-weight:700;color:var(--accent)">$${p.price.toFixed(2)}</span>
+      <span class="${p.stock > 5 ? 'badge-success' : p.stock > 0 ? 'badge-warning' : 'badge-danger'} badge">${p.stock > 0 ? `${p.stock} left` : 'Out of Stock'}</span>
+    </div>
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-ghost" style="flex:1" onclick="closeModal('product-modal')">Close</button>
+      ${p.stock > 0 ? `<button class="btn btn-primary" style="flex:1" onclick="addToCart(${p.id});closeModal('product-modal')">Add to Cart</button>` : ''}
+    </div>
+  `;
+  document.getElementById('product-modal').style.display = 'flex';
+}
+
+function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+
+// ── CART ───────────────────────────────────────────────────────────────
+function addToCart(productId) {
+  if (!state.currentUser) { showToast('Please sign in to add items!'); showPage('account'); return; }
+  if (state.currentUser.role === 'admin') { showToast('Admins cannot purchase items'); return; }
+  const p = state.products.find(x => x.id === productId);
+  if (!p || p.stock === 0) return;
+  const existing = state.cart.find(x => x.id === productId);
+  if (existing) {
+    if (existing.qty >= p.stock) { showToast('Max stock reached!'); return; }
+    existing.qty++;
+  } else {
+    state.cart.push({ id: productId, name: p.name, emoji: p.emoji, price: p.price, qty: 1 });
+  }
+  showToast(`${p.emoji} ${p.name} added to cart!`);
+  renderNav();
+}
+
+function updateQty(id, delta) {
+  const item = state.cart.find(x => x.id === id);
+  if (!item) return;
+  item.qty += delta;
+  if (item.qty <= 0) state.cart = state.cart.filter(x => x.id !== id);
+  renderCart();
+  renderNav();
+}
+
+function renderCart() {
+  const el = document.getElementById('cart-list');
+  const sum = document.getElementById('cart-summary');
+  if (!el) return;
+  if (!state.cart.length) {
+    el.innerHTML = '<div class="empty-state"><div class="icon">🛒</div><p>Your cart is empty</p><button class="btn btn-primary" style="margin-top:12px" onclick="showPage(\'home\')">Start Shopping</button></div>';
+    if (sum) sum.innerHTML = '';
+    return;
+  }
+  el.innerHTML = state.cart.map(item => `
+    <div class="cart-item">
+      <div class="cart-emoji">${item.emoji}</div>
+      <div style="flex:1">
+        <div style="font-weight:500">${item.name}</div>
+        <div style="color:var(--accent);font-weight:700">$${item.price.toFixed(2)}</div>
+      </div>
+      <div class="qty-ctrl">
+        <button class="qty-btn btn" onclick="updateQty(${item.id},-1)">−</button>
+        <span style="min-width:20px;text-align:center;font-weight:600">${item.qty}</span>
+        <button class="qty-btn btn" onclick="updateQty(${item.id},1)">+</button>
+      </div>
+      <div style="min-width:70px;text-align:right;font-weight:700">$${(item.price*item.qty).toFixed(2)}</div>
+    </div>
+  `).join('');
+  const total = state.cart.reduce((a,i)=>a+i.price*i.qty,0);
+  if (sum) sum.innerHTML = `
+    <div class="card" style="padding:20px;margin-top:20px;max-width:380px;margin-left:auto">
+      <div style="display:flex;justify-content:space-between;margin-bottom:8px;color:var(--muted)">
+        <span>Subtotal</span><span>$${total.toFixed(2)}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:8px;color:var(--muted)">
+        <span>Shipping</span><span style="color:var(--success)">Free</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-weight:700;font-size:18px;padding-top:12px;border-top:1px solid var(--border)">
+        <span>Total</span><span>$${total.toFixed(2)}</span>
+      </div>
+      <button class="btn btn-primary" style="width:100%;margin-top:16px;padding:14px;font-size:16px" onclick="openCheckout()">
+        Checkout →
+      </button>
+    </div>
+  `;
+}
+
+function openCheckout() {
+  document.getElementById('checkout-modal-content').innerHTML = `
+    <h3 style="margin-bottom:20px;font-size:18px">📋 Complete Your Order</h3>
+    <div class="form-group">
+      <label class="form-label">Delivery Address</label>
+      <input type="text" id="addr" placeholder="123 Main Street, City, Country" value="${state.currentUser?.address || ''}">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Payment Method</label>
+      <select id="payment">
+        <option>💳 Credit Card (ending in 4242)</option>
+        <option>🏦 Bank Transfer</option>
+        <option>📱 E-Wallet</option>
+      </select>
+    </div>
+    <div style="background:var(--color-background-secondary,#f9f9f6);border-radius:10px;padding:14px;margin:16px 0">
+      ${state.cart.map(i=>`<div style="display:flex;justify-content:space-between;font-size:14px;margin-bottom:6px"><span>${i.emoji} ${i.name} ×${i.qty}</span><span>$${(i.price*i.qty).toFixed(2)}</span></div>`).join('')}
+      <div style="border-top:1px solid var(--border);padding-top:10px;margin-top:8px;display:flex;justify-content:space-between;font-weight:700">
+        <span>Total</span><span>$${state.cart.reduce((a,i)=>a+i.price*i.qty,0).toFixed(2)}</span>
+      </div>
+    </div>
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-ghost" style="flex:1" onclick="closeModal('checkout-modal')">Cancel</button>
+      <button class="btn btn-primary" style="flex:1" onclick="placeOrder()">Place Order</button>
+    </div>
+  `;
+  document.getElementById('checkout-modal').style.display = 'flex';
+}
+
+function placeOrder() {
+  const addr = document.getElementById('addr')?.value;
+  if (!addr) { showToast('Please enter a delivery address'); return; }
+  const orderId = 'ORD-' + String(100 + state.nextOrderId++).padStart(3,'0');
+  const order = {
+    id: orderId,
+    userId: state.currentUser.id,
+    items: state.cart.map(i => ({ id: i.id, name: i.name, qty: i.qty, price: i.price })),
+    total: state.cart.reduce((a,i) => a+i.price*i.qty, 0),
+    status: 'processing',
+    date: new Date().toISOString().split('T')[0],
+    address: addr
+  };
+  state.cart.forEach(i => {
+    const p = state.products.find(x => x.id === i.id);
+    if (p) p.stock = Math.max(0, p.stock - i.qty);
+  });
+  state.orders.push(order);
+  state.cart = [];
+  closeModal('checkout-modal');
+  showToast(`✅ Order ${orderId} placed successfully!`);
+  showPage('orders');
+}
+
+// ── ORDERS ─────────────────────────────────────────────────────────────
+function renderOrders() {
+  const el = document.getElementById('orders-list');
+  if (!el) return;
+  const userOrders = state.orders.filter(o => o.userId === state.currentUser?.id);
+  if (!userOrders.length) {
+    el.innerHTML = '<div class="empty-state"><div class="icon">📦</div><p>No orders yet</p><button class="btn btn-primary" style="margin-top:12px" onclick="showPage(\'home\')">Start Shopping</button></div>';
+    return;
+  }
+  el.innerHTML = userOrders.reverse().map(o => `
+    <div class="card" style="padding:16px;margin-bottom:12px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <div>
+          <div style="font-weight:700;font-size:15px">${o.id}</div>
+          <div style="color:var(--muted);font-size:13px">${o.date}</div>
+        </div>
+        <span class="badge ${o.status==='delivered'?'badge-success':o.status==='shipped'?'badge-warning':'badge-danger'}">${o.status.charAt(0).toUpperCase()+o.status.slice(1)}</span>
+      </div>
+      <div style="font-size:13px;color:var(--muted);margin-bottom:10px">${o.items.map(i=>`${i.name} ×${i.qty}`).join(' · ')}</div>
+      <div style="font-weight:700;font-size:16px;color:var(--accent)">$${o.total.toFixed(2)}</div>
+    </div>
+  `).join('');
+}
+
+// ── AUTH ───────────────────────────────────────────────────────────────
+let authMode = 'login';
+function renderAccount() {
+  const u = state.currentUser;
+  const el = document.getElementById('auth-form');
+  if (!el) return;
+  if (u) {
+    el.innerHTML = `
+      <div style="text-align:center;margin-bottom:20px">
+        <div style="width:64px;height:64px;border-radius:50%;background:var(--accent-light);color:var(--accent);font-size:24px;font-weight:700;display:flex;align-items:center;justify-content:center;margin:0 auto 10px">${u.name[0]}</div>
+        <h3>${u.name}</h3>
+        <p style="color:var(--muted);font-size:14px">${u.email}</p>
+        <span class="badge ${u.role==='admin'?'badge-danger':'badge-success'}" style="margin-top:6px">${u.role}</span>
+      </div>
+      <div style="border-top:1px solid var(--border);padding-top:16px;margin-top:4px">
+        <div style="font-size:13px;color:var(--muted);margin-bottom:4px">Member since</div>
+        <div style="font-weight:500">${u.joined}</div>
+      </div>
+      <button class="btn btn-danger" style="width:100%;margin-top:20px;padding:10px" onclick="logout()">Sign Out</button>
+    `;
+  } else if (authMode === 'login') {
+    el.innerHTML = `
+      <h3 style="margin-bottom:20px">Welcome back</h3>
+      <div class="form-group"><label class="form-label">Email</label><input type="email" id="login-email" placeholder="you@example.com"></div>
+      <div class="form-group"><label class="form-label">Password</label><input type="password" id="login-pass" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()"></div>
+      <button class="btn btn-primary" style="width:100%;padding:12px;margin-bottom:12px" onclick="doLogin()">Sign In</button>
+      <div style="text-align:center;font-size:13px;color:var(--muted)">
+        No account? <button style="background:none;border:none;color:var(--accent);cursor:pointer;font-size:13px" onclick="authMode='register';renderAccount()">Create one</button>
+      </div>
+      <div style="margin-top:16px;padding:12px;background:var(--color-background-secondary,#f9f9f6);border-radius:8px;font-size:12px;color:var(--muted)">
+        <strong>Demo:</strong> admin@shopcraft.com / admin123<br>Customer: jane@example.com / pass123
+      </div>
+    `;
+  } else {
+    el.innerHTML = `
+      <h3 style="margin-bottom:20px">Create Account</h3>
+      <div class="form-group"><label class="form-label">Full Name</label><input type="text" id="reg-name" placeholder="Jane Smith"></div>
+      <div class="form-group"><label class="form-label">Email</label><input type="email" id="reg-email" placeholder="you@example.com"></div>
+      <div class="form-group"><label class="form-label">Password</label><input type="password" id="reg-pass" placeholder="min 6 characters"></div>
+      <button class="btn btn-primary" style="width:100%;padding:12px;margin-bottom:12px" onclick="doRegister()">Create Account</button>
+      <div style="text-align:center;font-size:13px;color:var(--muted)">
+        Have an account? <button style="background:none;border:none;color:var(--accent);cursor:pointer;font-size:13px" onclick="authMode='login';renderAccount()">Sign in</button>
+      </div>
+    `;
+  }
+}
+
+function doLogin() {
+  const email = document.getElementById('login-email')?.value.trim();
+  const pass = document.getElementById('login-pass')?.value;
+  const user = state.users.find(u => u.email === email && u.password === pass);
+  if (!user) { showToast('Invalid email or password'); return; }
+  state.currentUser = user;
+  showToast(`Welcome back, ${user.name.split(' ')[0]}! 👋`);
+  document.getElementById('ai-chat').style.display = 'block';
+  if (user.role === 'admin') showPage('admin');
+  else showPage('home');
+}
+
+function doRegister() {
+  const name = document.getElementById('reg-name')?.value.trim();
+  const email = document.getElementById('reg-email')?.value.trim();
+  const pass = document.getElementById('reg-pass')?.value;
+  if (!name || !email || !pass) { showToast('Please fill all fields'); return; }
+  if (pass.length < 6) { showToast('Password must be 6+ characters'); return; }
+  if (state.users.find(u => u.email === email)) { showToast('Email already registered'); return; }
+  const newUser = { id: state.users.length + 1, name, email, password: pass, role: 'customer', joined: new Date().toISOString().split('T')[0] };
+  state.users.push(newUser);
+  state.currentUser = newUser;
+  showToast(`Account created! Welcome, ${name.split(' ')[0]}! 🎉`);
+  document.getElementById('ai-chat').style.display = 'block';
+  showPage('home');
+}
+
+function logout() {
+  state.currentUser = null;
+  state.cart = [];
+  document.getElementById('ai-chat').style.display = 'none';
+  showToast('Signed out. See you soon!');
+  showPage('account');
+}
+
+// ── ADMIN ──────────────────────────────────────────────────────────────
+function switchAdminTab(tab) {
+  state.adminTab = tab;
+  document.querySelectorAll('.admin-nav-item').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.admin-nav-item').forEach(b => {
+    if (b.textContent.toLowerCase().includes(tab)) b.classList.add('active');
+  });
+  ['dashboard','products','orders','customers'].forEach(t => {
+    document.getElementById('admin-' + t).style.display = t === tab ? 'block' : 'none';
+  });
+  if (tab === 'dashboard') renderAdminDashboard();
+  if (tab === 'products') renderAdminProducts();
+  if (tab === 'orders') renderAdminOrders();
+  if (tab === 'customers') renderAdminCustomers();
+}
+
+function renderAdmin() {
+  switchAdminTab('dashboard');
+}
+
+function renderAdminDashboard() {
+  const revenue = state.orders.reduce((a,o)=>a+o.total,0);
+  const customers = state.users.filter(u=>u.role==='customer').length;
+  const el = document.getElementById('admin-dashboard');
+  el.innerHTML = `
+    <h2 style="margin-bottom:20px;font-size:22px">📊 Dashboard</h2>
+    <div class="stats-grid">
+      <div class="stat-card"><div class="stat-label">Total Revenue</div><div class="stat-value" style="color:var(--success)">$${revenue.toFixed(0)}</div></div>
+      <div class="stat-card"><div class="stat-label">Total Orders</div><div class="stat-value">${state.orders.length}</div></div>
+      <div class="stat-card"><div class="stat-label">Customers</div><div class="stat-value">${customers}</div></div>
+      <div class="stat-card"><div class="stat-label">Products</div><div class="stat-value">${state.products.length}</div></div>
+    </div>
+    <div class="card" style="padding:20px">
+      <h3 style="margin-bottom:16px;font-size:16px">Recent Orders</h3>
+      <table class="data-table">
+        <thead><tr><th>Order ID</th><th>Customer</th><th>Amount</th><th>Status</th><th>Date</th></tr></thead>
+        <tbody>
+          ${state.orders.slice(-5).reverse().map(o => {
+            const user = state.users.find(u=>u.id===o.userId);
+            return `<tr>
+              <td style="font-weight:600">${o.id}</td>
+              <td>${user?.name||'Unknown'}</td>
+              <td style="font-weight:600">$${o.total.toFixed(2)}</td>
+              <td><span class="badge ${o.status==='delivered'?'badge-success':o.status==='shipped'?'badge-warning':'badge-danger'}">${o.status}</span></td>
+              <td>${o.date}</td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+function renderAdminProducts() {
+  const el = document.getElementById('admin-products');
+  el.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+      <h2 style="font-size:22px">📦 Products</h2>
+      <button class="btn btn-primary" onclick="openAddProduct()">+ Add Product</button>
+    </div>
+    <div class="card" style="overflow:auto">
+      <table class="data-table">
+        <thead><tr><th>Product</th><th>Category</th><th>Price</th><th>Stock</th><th>Actions</th></tr></thead>
+        <tbody>
+          ${state.products.map(p => `<tr>
+            <td><span style="font-size:20px;margin-right:8px">${p.emoji}</span>${p.name}</td>
+            <td><span class="badge" style="background:var(--accent-light);color:var(--accent)">${p.category}</span></td>
+            <td style="font-weight:600">$${p.price.toFixed(2)}</td>
+            <td><span class="${p.stock > 10 ? 'badge-success' : p.stock > 0 ? 'badge-warning' : 'badge-danger'} badge">${p.stock}</span></td>
+            <td>
+              <button class="btn btn-ghost btn-sm" onclick="editProduct(${p.id})" style="margin-right:6px">Edit</button>
+              <button class="btn btn-danger" onclick="deleteProduct(${p.id})">Delete</button>
+            </td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+function openAddProduct() {
+  showProductForm(null);
+}
+
+function editProduct(id) {
+  showProductForm(state.products.find(p=>p.id===id));
+}
+
+function showProductForm(p) {
+  document.getElementById('product-modal-content').innerHTML = `
+    <h3 style="margin-bottom:20px">${p ? 'Edit Product' : 'Add Product'}</h3>
+    <div class="form-group"><label class="form-label">Product Name</label><input id="pf-name" value="${p?.name||''}"></div>
+    <div class="form-group"><label class="form-label">Emoji</label><input id="pf-emoji" value="${p?.emoji||'📦'}" style="font-size:24px;width:80px"></div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Price ($)</label><input type="number" id="pf-price" value="${p?.price||''}"></div>
+      <div class="form-group"><label class="form-label">Stock</label><input type="number" id="pf-stock" value="${p?.stock||''}"></div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Category</label>
+      <select id="pf-cat">
+        ${['Electronics','Fashion','Home','Sports'].map(c=>`<option ${p?.category===c?'selected':''}>${c}</option>`).join('')}
+      </select>
+    </div>
+    <div class="form-group"><label class="form-label">Description</label><textarea id="pf-desc" rows="3">${p?.desc||''}</textarea></div>
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-ghost" style="flex:1" onclick="closeModal('product-modal')">Cancel</button>
+      <button class="btn btn-primary" style="flex:1" onclick="saveProduct(${p?.id||null})">${p ? 'Save Changes' : 'Add Product'}</button>
+    </div>
+  `;
+  document.getElementById('product-modal').style.display = 'flex';
+}
+
+function saveProduct(id) {
+  const data = {
+    name: document.getElementById('pf-name').value,
+    emoji: document.getElementById('pf-emoji').value,
+    price: parseFloat(document.getElementById('pf-price').value),
+    stock: parseInt(document.getElementById('pf-stock').value),
+    category: document.getElementById('pf-cat').value,
+    desc: document.getElementById('pf-desc').value
+  };
+  if (!data.name || isNaN(data.price)) { showToast('Please fill all required fields'); return; }
+  if (id) {
+    Object.assign(state.products.find(p=>p.id===id), data);
+    showToast('Product updated!');
+  } else {
+    state.products.push({ id: Date.now(), ...data });
+    showToast('Product added!');
+  }
+  closeModal('product-modal');
+  renderAdminProducts();
+}
+
+function deleteProduct(id) {
+  if (!confirm('Delete this product?')) return;
+  state.products = state.products.filter(p=>p.id!==id);
+  showToast('Product deleted');
+  renderAdminProducts();
+}
+
+function renderAdminOrders() {
+  const el = document.getElementById('admin-orders');
+  el.innerHTML = `
+    <h2 style="margin-bottom:20px;font-size:22px">🧾 Orders</h2>
+    <div class="card" style="overflow:auto">
+      <table class="data-table">
+        <thead><tr><th>Order ID</th><th>Customer</th><th>Items</th><th>Total</th><th>Status</th><th>Date</th><th>Action</th></tr></thead>
+        <tbody id="orders-tbody">
+          ${state.orders.map(o => {
+            const user = state.users.find(u=>u.id===o.userId);
+            return `<tr id="order-row-${o.id}">
+              <td style="font-weight:700">${o.id}</td>
+              <td>${user?.name||'Unknown'}</td>
+              <td style="font-size:13px;color:var(--muted)">${o.items.map(i=>i.name).join(', ')}</td>
+              <td style="font-weight:700">$${o.total.toFixed(2)}</td>
+              <td><span class="badge ${o.status==='delivered'?'badge-success':o.status==='shipped'?'badge-warning':'badge-danger'}">${o.status}</span></td>
+              <td>${o.date}</td>
+              <td>
+                <select style="width:auto;font-size:12px;padding:4px 8px" onchange="updateOrderStatus('${o.id}', this.value)">
+                  <option ${o.status==='processing'?'selected':''}>processing</option>
+                  <option ${o.status==='shipped'?'selected':''}>shipped</option>
+                  <option ${o.status==='delivered'?'selected':''}>delivered</option>
+                  <option ${o.status==='cancelled'?'selected':''}>cancelled</option>
+                </select>
+              </td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+function updateOrderStatus(orderId, status) {
+  const order = state.orders.find(o=>o.id===orderId);
+  if (order) { order.status = status; showToast(`Order ${orderId} updated to ${status}`); }
+}
+
+function renderAdminCustomers() {
+  const customers = state.users.filter(u=>u.role==='customer');
+  const el = document.getElementById('admin-customers');
+  el.innerHTML = `
+    <h2 style="margin-bottom:20px;font-size:22px">👥 Customers</h2>
+    <div class="card" style="overflow:auto">
+      <table class="data-table">
+        <thead><tr><th>Name</th><th>Email</th><th>Joined</th><th>Orders</th><th>Spent</th></tr></thead>
+        <tbody>
+          ${customers.map(u => {
+            const userOrders = state.orders.filter(o=>o.userId===u.id);
+            const spent = userOrders.reduce((a,o)=>a+o.total,0);
+            return `<tr>
+              <td><span style="width:32px;height:32px;border-radius:50%;background:var(--accent-light);color:var(--accent);font-weight:700;display:inline-flex;align-items:center;justify-content:center;margin-right:8px;font-size:13px">${u.name[0]}</span>${u.name}</td>
+              <td style="color:var(--muted)">${u.email}</td>
+              <td>${u.joined}</td>
+              <td><span class="badge badge-success">${userOrders.length}</span></td>
+              <td style="font-weight:700;color:var(--success)">$${spent.toFixed(2)}</td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+// ── AI CHAT ─────────────────────────────────────────────────────────────
+function toggleChat() {
+  const panel = document.getElementById('ai-panel');
+  state.chatOpen = !state.chatOpen;
+  panel.style.display = state.chatOpen ? 'flex' : 'none';
+  if (state.chatOpen) document.getElementById('ai-input')?.focus();
+}
+
+async function sendAIMsg() {
+  const input = document.getElementById('ai-input');
+  const msg = input?.value.trim();
+  if (!msg) return;
+  input.value = '';
+  appendAIMsg(msg, 'user');
+  const loadingEl = appendAIMsg('Thinking...', 'bot');
+  const context = `You are ShopBot, a helpful assistant for ShopCraft ecommerce store.
+Current user: ${state.currentUser?.name || 'Guest'}.
+Products available: ${state.products.map(p=>`${p.name} ($${p.price}, stock: ${p.stock})`).join(', ')}.
+User's cart: ${state.cart.length ? state.cart.map(i=>`${i.name} ×${i.qty}`).join(', ') : 'empty'}.
+Recent orders: ${state.orders.filter(o=>o.userId===state.currentUser?.id).map(o=>`${o.id}: ${o.status}`).join(', ') || 'none'}.
+Be concise, friendly, and helpful. Answer in 1-3 sentences max.`;
+  try {
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 300,
+        system: context,
+        messages: [{ role: 'user', content: msg }]
+      })
+    });
+    const data = await res.json();
+    const reply = data.content?.[0]?.text || "Sorry, I couldn't get a response right now.";
+    loadingEl.textContent = reply;
+  } catch {
+    loadingEl.textContent = "Oops! Something went wrong. Try again? 🙏";
+  }
+}
+
+function appendAIMsg(text, role) {
+  const container = document.getElementById('ai-messages');
+  const el = document.createElement('div');
+  el.className = `ai-msg ${role}`;
+  el.textContent = text;
+  container.appendChild(el);
+  container.scrollTop = container.scrollHeight;
+  return el;
+}
+
+// ── UTILS ──────────────────────────────────────────────────────────────
+function showToast(msg) {
+  const t = document.createElement('div');
+  t.className = 'toast';
+  t.textContent = msg;
+  document.getElementById('toast-container').appendChild(t);
+  setTimeout(() => t.remove(), 3000);
+}
+
+// Close modals on overlay click
+document.querySelectorAll('.modal-overlay').forEach(el => {
+  el.addEventListener('click', e => { if (e.target === el) el.style.display = 'none'; });
+});
+
+// ── INIT ───────────────────────────────────────────────────────────────
+renderNav();
+renderProducts();
+</script>
+</body>
+</html>
